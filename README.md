@@ -25,20 +25,19 @@ $dl=tr(-yda+(d\log \exp (a)  1_{k,1}))$
 $d\log \exp (a) 1_{k,1} = \frac{d \exp (a) 1_{k,1}}{\exp (a) 1_{k,1}}$ 
 $=\frac{\exp a_{1,k} \odot da_{1,k} 1_{k,1}}{\exp (a) 1_{k,1}}$
 
-$
-=\frac{(\exp (a)_{1,k}^T \odot 1_{k,1})da_{1,k}}{\exp (a) 1_{k,1}}=\frac{\exp (a)_{1,k}^T da_{1,k}}{\exp (a) 1_{k,1}} $
+$=\frac{\exp a_{1,k}^T \odot 1_{k,1} da_{1,k}}{\exp (a) 1_{k,1}}=\frac{\exp a_{1,k}^T da_{1,k}}{\exp (a) 1_{k,1}} $
 
-$dl=tr(-yda+(d\log \exp (a){{1}_{k,1}}))=tr(-yda+\frac{\exp {{(a)}_{1,k}}^{T}d{{a}_{1,k}}}{\exp (a){{1}_{k,1}}})$
+$dl=tr(-yda+(d\log \exp a 1_{k,1}))=tr(-yda+\frac{\exp a_{1,k}^T da_{1,k}}{\exp (a) 1_{k,1}})$
 
-$=tr[(-y+\frac{\exp {{(a)}_{1,k}}^{T}}{\exp (a){{1}_{k,1}}})da] $
+$=tr[(-y+\frac{\exp a_{1,k}^T }{\exp a 1_{k,1} da}]$
 
-$\frac{\partial l}{\partial a}=-{{y}^{T}}+\frac{\exp {{(a)}_{1,k}}^{{}}}{\exp (a){{1}_{k,1}}}=-{{y}^{T}}+SoftMax(a)$
+$\frac{\partial l}{\partial a}=-y^T+\frac{\exp (a)_{1,k}}{\exp (a) 1_{k,1}}=-y^T+SoftMax(a)$
 
-$dl=tr[(-y+\frac{\exp {{(a)}_{1,k}}^{T}}{\exp (a){{1}_{k,1}}})da]=tr[(-y+\frac{\exp {{(a)}_{1,k}}^{T}}{\exp (a){{1}_{k,1}}})dXW] $
+$dl=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})da]=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})dXW] $
 
-$=tr[(-y+\frac{\exp {{(a)}_{1,k}}^{T}}{\exp (a){{1}_{k,1}}})XdW]$
+$=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})XdW]$
 
-$\frac{\partial l}{\partial W}={{X}^{T}}(-{{y}^{T}}+\frac{\exp {{(a)}_{1,k}}^{{}}}{\exp (a){{1}_{k,1}}})$
+$\frac{\partial l}{\partial W}=X^T(-y^T+\frac{\exp (a)_{1,k}}{\exp (a) 1_{k,1}})$
 
 
 
@@ -64,7 +63,4 @@ d{{L}_{2}}\text{=}tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{\frac{\par
  d{{L}_{2}}=tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{\frac{\partial L}{\partial {{H}_{1,i}}}}^{T}}d{{H}_{1,i}}\text{ }\!\!\}\!\!\text{ }}=tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{\frac{\partial L}{\partial {{H}_{1,i}}}}^{T}}[{{\sigma }^{'}}({{O}_{1,i}})\odot d{{O}_{1,i}}\text{ }\!\!]\!\!\text{  }\!\!\}\!\!\text{ }}=tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{[\frac{\partial L}{\partial {{H}_{1,i}}}\odot {{\sigma }^{'}}({{O}_{1,i}})]}^{T}}d{{O}_{1,i}}\text{ }\!\!\}\!\!\text{ }} \\ 
  \frac{\partial L}{\partial {{O}_{1,i}}}=\frac{\partial L}{\partial {{H}_{1,i}}}\odot {{\sigma }^{'}}({{O}_{1,i}}) \\ 
  d{{L}_{2}}=tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{\frac{\partial L}{\partial {{O}_{1,i}}}}^{T}}d{{O}_{1,i}}\text{ }\!\!\}\!\!\text{ }}=tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{\frac{\partial L}{\partial {{O}_{1,i}}}}^{T}}d[{{X}_{i}}{{W}_{1}}+b]\text{ }\!\!\}\!\!\text{ }}=tr\text{ }\!\!\{\!\!\text{ }\sum\limits_{i=1}^{n}{{{\frac{\partial L}{\partial {{O}_{1,i}}}}^{T}}[{{X}_{i}}d{{W}_{1}}+db]\text{ }\!\!\}\!\!\text{ }} \\ 
-\frac{\partial L}{\partial {{W}_{2}}}=\sum{{{X}_{i}}^{T}{{\frac{\partial L}{\partial {{O}_{1,i}}}}^{{}}}} \\ 
- \frac{\partial L}{\partial {{b}_{2}}}=\sum{{{\frac{\partial L}{\partial {{O}_{1,i}}}}^{{}}}} \\ 
- \\ 
-$
+\frac{\partial L}{\partial {{W}_{2}}}=\sum{{{X}_{i}}^{T}{{\frac{\partial L}{\partial {{O}_{1,i}}}}^{{}}}} \\ $
