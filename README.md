@@ -16,9 +16,11 @@ $dl=-d\log (SoftMax(a))y
 
 $d\log (SoftMax(a))=d\log \frac{\exp (a)}{\exp (a) 1_{k,1}}=da-(d\log \exp (a) 1_{k,1}) 1^{T}$
 
-$dl=tr(-yda+y(d\log \exp (a){{1}_{k,1}}){{1}^{T}}),tr(AB)=tr(BA)\\dl=tr(-yda+{{1}^{T}}y(d\log \exp (a){{1}_{k,1}})),{{1}^{T}}y=1 \\ 
-dl=tr(-yda+(d\log \exp (a){{1}_{k,1}})) \\ 
-d\log \exp (a){{1}_{k,1}}=\frac{d\exp (a){{1}_{k,1}}}{\exp (a){{1}_{k,1}}}=\frac{(\exp {{(a)}_{1,k}}\odot d{{a}_{1,k}}){{1}_{k,1}}}{\exp (a){{1}_{k,1}}} \\ 
+$dl=tr(-yda+y(d\log \exp (a) 1_{k,1}) 1^{T}),tr(AB)=tr(BA)\\dl=tr(-yda+ 1^T y(d\log \exp (a) 1_{k,1})), 1^{T}y=1 \\ 
+dl=tr(-yda+(d\log \exp (a)  1_{k,1})) \\ 
+d\log \exp (a) 1_{k,1}=\frac{d\exp (a) 1_{k,1}}{\exp (a) 1_{k,1}}=\frac{(\exp (a)_{1,k}\odot d a_{1,k}) 1_{k,1}}{\exp (a) 1_{k,1}} $
+
+$
 =\frac{(\exp {{(a)}_{1,k}}^{T}\odot {{1}_{k,1}})d{{a}_{1,k}}}{\exp (a){{1}_{k,1}}}=\frac{\exp {{(a)}_{1,k}}^{T}d{{a}_{1,k}}}{\exp (a){{1}_{k,1}}} \\ 
 dl=tr(-yda+(d\log \exp (a){{1}_{k,1}}))=tr(-yda+\frac{\exp {{(a)}_{1,k}}^{T}d{{a}_{1,k}}}{\exp (a){{1}_{k,1}}}) \\ 
 =tr[(-y+\frac{\exp {{(a)}_{1,k}}^{T}}{\exp (a){{1}_{k,1}}})da] \\ 
