@@ -20,6 +20,9 @@ $dl=tr(-yda+y(d\log \exp (a) 1_{k,1}) 1^{T}),tr(AB)=tr(BA)$
 
 $dl=tr(-yda+ 1^T y(d\log \exp (a) 1_{k,1})), 1^{T}y=1 $
 $dl=tr(-yda+(d\log \exp (a)  1_{k,1}))$ 
+
+
+
 $d\log \exp (a) 1_{k,1}=\frac{d\exp (a) 1_{k,1}}{\exp (a) 1_{k,1}}$$=\frac{(\exp (a)_{1,k}\odot d a_{1,k}) 1_{k,1}}{\exp (a) 1_{k,1}}$
 
 $
