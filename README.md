@@ -14,7 +14,7 @@ $dl=-d\log (SoftMax(a))y
 =tr(-d\log (SoftMax(a))y)
 =tr(-yd\log (SoftMax(a)))$
 
-$d\log (SoftMax(a))=d\log \frac{\exp (a)}{\exp (a){{1}_{k,1}}}=da-(d\log \exp (a){{1}_{k,1}}){{1}^{T}}$
+$d\log (SoftMax(a))=d\log \frac{\exp (a)}{\exp (a) 1_{k,1}}=da-(d\log \exp (a) 1_{k,1}) 1^{T}$
 
 $dl=tr(-yda+y(d\log \exp (a){{1}_{k,1}}){{1}^{T}}),tr(AB)=tr(BA)\\dl=tr(-yda+{{1}^{T}}y(d\log \exp (a){{1}_{k,1}})),{{1}^{T}}y=1 \\ 
 dl=tr(-yda+(d\log \exp (a){{1}_{k,1}})) \\ 
