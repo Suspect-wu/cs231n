@@ -35,9 +35,9 @@ $\frac{\partial l}{\partial a}=-y^T+\frac{\exp a_{1,k}}{\exp a 1_{k,1}}=-y^T+Sof
 
 $dl=tr[(-y+\frac{\exp a_{1,k}^T}{\exp (a) 1_{k,1}})da]=tr[(-y+\frac{\exp a_{1,k}^T}{\exp (a) 1_{k,1}})dXW] $
 
-$=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})XdW]$
+$=tr[(-y+\frac{\exp a_{1,k}^T}{\exp (a) 1_{k,1}})XdW]$
 
-$\frac{\partial l}{\partial W}=X^T(-y^T+\frac{\exp (a)_{1,k}}{\exp (a) 1_{k,1}})$
+$\frac{\partial l}{\partial W}=X^T(-y^T+\frac{\exp a_{1,k}}{\exp (a) 1_{k,1}})$
 
 
 
