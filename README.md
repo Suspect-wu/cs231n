@@ -4,7 +4,7 @@
 
 > SoftMax更新梯度
 
-$l=-\log (SoftMax({{X}_{1,D}}{{W}_{D,K}}))y_{K,1}^{{}}$
+$l=-\log (SoftMax(X_{1,D}W_{D,K}))y_{K,1}$
 
 $a=XW$
 
