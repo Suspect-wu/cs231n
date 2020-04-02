@@ -43,5 +43,11 @@ $\frac{\partial l}{\partial W}=X^T(-y^T+\frac{\exp a_{1,k}}{\exp (a) 1_{k,1}})$
 
 > BP算法
 
-![]([https://github.com/Suspect-wu/cs231n/blob/master/%E6%9D%82%E4%B9%B1%E6%97%A0%E7%AB%A0/BP.png](https://github.com/Suspect-wu/cs231n/blob/master/杂乱无章/BP.png)
+![](https://github.com/Suspect-wu/cs231n/blob/master/杂乱无章/BP.png?raw=true)
+
+
+
+
+
+
 
