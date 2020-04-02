@@ -33,7 +33,7 @@ $=tr[(-y+\frac{\exp a_{1,k}^T }{\exp a 1_{k,1} da}]$
 
 $\frac{\partial l}{\partial a}=-y^T+\frac{\exp a_{1,k}}{\exp a 1_{k,1}}=-y^T+SoftMax(a)$
 
-$dl=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})da]=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})dXW] $
+$dl=tr[(-y+\frac{\exp a_{1,k}^T}{\exp (a) 1_{k,1}})da]=tr[(-y+\frac{\exp a_{1,k}^T}{\exp (a) 1_{k,1}})dXW] $
 
 $=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})XdW]$
 
