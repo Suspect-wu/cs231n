@@ -31,7 +31,7 @@ $dl=tr(-yda+(d\log \exp a 1_{k,1}))=tr(-yda+\frac{\exp a_{1,k}^T da_{1,k}}{\exp 
 
 $=tr[(-y+\frac{\exp a_{1,k}^T }{\exp a 1_{k,1} da}]$
 
-$\frac{\partial l}{\partial a}=-y^T+\frac{\exp (a)_{1,k}}{\exp (a) 1_{k,1}}=-y^T+SoftMax(a)$
+$\frac{\partial l}{\partial a}=-y^T+\frac{\exp a_{1,k}}{\exp a 1_{k,1}}=-y^T+SoftMax(a)$
 
 $dl=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})da]=tr[(-y+\frac{\exp (a)_{1,k}^T}{\exp (a) 1_{k,1}})dXW] $
 
