@@ -49,27 +49,26 @@ class CaptioningRNN(object):
         self._end = word_to_idx.get('<END>', None)
 
         # Initialize word vectors
-        self.params['W_embed'] = np.random.randn(vocab_size, wordvec_dim)  # V*W
+        self.params['W_embed'] = np.random.randn(vocab_size, wordvec_dim)
         self.params['W_embed'] /= 100
-        
-        # 这里的参数为什么要除以sqrt维数？Xavier初始化方法！
+
         # Initialize CNN -> hidden state projection parameters
-        self.params['W_proj'] = np.random.randn(input_dim, hidden_dim)  # D*H
+        self.params['W_proj'] = np.random.randn(input_dim, hidden_dim)
         self.params['W_proj'] /= np.sqrt(input_dim)
-        self.params['b_proj'] = np.zeros(hidden_dim)  # H
+        self.params['b_proj'] = np.zeros(hidden_dim)
 
         # Initialize parameters for the RNN
         dim_mul = {'lstm': 4, 'rnn': 1}[cell_type]
-        self.params['Wx'] = np.random.randn(wordvec_dim, dim_mul * hidden_dim)  # W*(4)H
+        self.params['Wx'] = np.random.randn(wordvec_dim, dim_mul * hidden_dim)
         self.params['Wx'] /= np.sqrt(wordvec_dim)
-        self.params['Wh'] = np.random.randn(hidden_dim, dim_mul * hidden_dim)   # H*(4)H
+        self.params['Wh'] = np.random.randn(hidden_dim, dim_mul * hidden_dim)
         self.params['Wh'] /= np.sqrt(hidden_dim)
-        self.params['b'] = np.zeros(dim_mul * hidden_dim)   # (4)H
+        self.params['b'] = np.zeros(dim_mul * hidden_dim)
 
         # Initialize output to vocab weights
-        self.params['W_vocab'] = np.random.randn(hidden_dim, vocab_size)  # H*V
+        self.params['W_vocab'] = np.random.randn(hidden_dim, vocab_size)
         self.params['W_vocab'] /= np.sqrt(hidden_dim)
-        self.params['b_vocab'] = np.zeros(vocab_size)   # V
+        self.params['b_vocab'] = np.zeros(vocab_size)
 
         # Cast parameters to correct dtype
         for k, v in self.params.items():
@@ -100,7 +99,7 @@ class CaptioningRNN(object):
         captions_in = captions[:, :-1]
         captions_out = captions[:, 1:]
 
-        # You'll need this  得到captions_out里面所有不为空的数据
+        # You'll need this
         mask = (captions_out != self._null)
 
         # Weight and bias for the affine transform from image features to initial
@@ -137,35 +136,44 @@ class CaptioningRNN(object):
         # with respect to all model parameters. Use the loss and grads variables   #
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
+        #                                                                          #
+        # Note also that you are allowed to make use of functions from layers.py   #
+        # in your implementation, if needed.                                       #
         ############################################################################
-        #（1）由图片特征计算初始hidden状态,也就是h0
-        affine_out, affine_cache = affine_forward(features, W_proj, b_proj)  # N*H
-        # (2) 将caption从index转为vector，转变以后为N*T*W
-        word_out, word_cache = word_embedding_forward(captions_in, W_embed)  
-        # (3) 进行rnn操作，最后产出N*T*H
+        # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+        out_a, cache_a = affine_forward(features, W_proj, b_proj)
+        out_we, cache_we = word_embedding_forward(captions_in, W_embed)
+        
         if self.cell_type == 'rnn':
-            rnn_or_lstm_out, rnn_cache = rnn_forward(word_out, affine_out, Wx, Wh, b)
-        elif self.cell_type == 'lstm':
-            rnn_or_lstm_out, lstm_cache = lstm_forward(word_out, affine_out, Wx, Wh, b)
-        else:
-            raise ValueError('Invalid cell_type "%s"' % self.cell_type)
-        # (4) 计算scores， 最后产生N*T*V
-        temporal_affine_out, temporal_affine_cache = temporal_affine_forward(rnn_or_lstm_out, W_vocab, b_vocab)
-        # (5) 计算loss
-        loss,dtemporal_affine_out = temporal_softmax_loss(temporal_affine_out, captions_out, mask)
-        # (4) backward
-        drnn_or_lstm_out, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dtemporal_affine_out, temporal_affine_cache) 
-        # (3)
+            h, cache_rnn = rnn_forward(out_we, out_a, Wx, Wh, b)
+        if self.cell_type == 'lstm':
+            h, cache_lstm = lstm_forward(out_we, out_a, Wx, Wh, b)
+        
+        out_ta, cache_ta = temporal_affine_forward(h, W_vocab, b_vocab)
+        
+        loss, dx = temporal_softmax_loss(out_ta, captions_out, mask, verbose=False)
+        
+        dh, dW_vocab, db_vocab = temporal_affine_backward(dx, cache_ta)
+        
         if self.cell_type == 'rnn':
-            dword_out, daffine_out, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(drnn_or_lstm_out, rnn_cache)
-        elif self.cell_type == 'lstm':
-            dword_out, daffine_out, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(drnn_or_lstm_out,lstm_cache)
-        else:
-            raise ValueError('Invalid cell_type "%s"' % self.cell_type)
-        # (2)
-        grads['W_embed'] = word_embedding_backward(dword_out, word_cache)
-        # (1)
-        dfeatures, grads['W_proj'], grads['b_proj'] = affine_backward(daffine_out, affine_cache)
+            dout_we, dout_ta, dWx, dWh, db = rnn_backward(dh, cache_rnn)
+        if self.cell_type == 'lstm':
+            dout_we, dout_ta, dWx, dWh, db = lstm_backward(dh, cache_lstm)
+            
+        dW_embed = word_embedding_backward(dout_we, cache_we)
+        _, dW_proj, db_proj = affine_backward(dout_ta, cache_a)
+        
+        grads['W_proj'] = dW_proj
+        grads['b_proj'] = db_proj
+        grads['W_embed'] = dW_embed
+        grads['Wx'] = dWx
+        grads['Wh'] = dWh
+        grads['b'] = db
+        grads['W_vocab'] = dW_vocab
+        grads['b_vocab'] = db_vocab
+
+        # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -218,7 +226,7 @@ class CaptioningRNN(object):
         # (3) Apply the learned affine transformation to the next hidden state to #
         #     get scores for all words in the vocabulary                          #
         # (4) Select the word with the highest score as the next word, writing it #
-        #     to the appropriate slot in the captions variable                    #
+        #     (the word index) to the appropriate slot in the captions variable   #
         #                                                                         #
         # For simplicity, you do not need to stop generating after an <END> token #
         # is sampled, but you can if you want to.                                 #
@@ -226,34 +234,33 @@ class CaptioningRNN(object):
         # HINT: You will not be able to use the rnn_forward or lstm_forward       #
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
+        #                                                                         #
+        # NOTE: we are still working over minibatches in this function. Also if   #
+        # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
-        pre_word = np.array([self._start] * N)
-        prev_h,_ = affine_forward(features, W_proj, b_proj)
-        H = prev_h.shape[1]
+        # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+        prev_h, _ = affine_forward(features, W_proj, b_proj)
+        x = W_embed[self._start]
+        c = 0
         
-        if self.cell_type != "rnn":
-            prev_c=np.zeros((N,H))
-        
-        for i in range(max_length):
-            out,_ = word_embedding_forward(pre_word, W_embed)
-            if self.cell_type == 'rnn':
-                next_h, _ = rnn_step_forward(out, prev_h, Wx, Wh, b)
-            elif self.cell_type == 'lstm':
-                next_h, next_c, _ = lstm_step_forward(out, prev_h, prev_c, Wx, Wh, b)
-            prev_h = next_h
-            next_h=np.reshape(next_h,(next_h.shape[0],next_h.shape[1],1))
-            next_h = np.transpose(next_h,(0,2,1))
-            
-            vout, _ = temporal_affine_forward(next_h,W_vocab, b_vocab)
-            vout_idx=np.argmax(vout,axis=2)  # 找到每一个样本的下一个词的概率最大的解
-            for ni in range(N):
-                captions[ni,i]=vout_idx[ni] 
+        if self.cell_type == 'rnn':
+            for i in range(max_length):
+                prev_h, _ = rnn_step_forward(x, prev_h, Wx, Wh, b)
+                x, _ = affine_forward(prev_h, W_vocab, b_vocab)
+                next_x = np.argsort(x, axis = 1)[:, -1]
+                captions[:, i] = next_x.copy()
+                x = W_embed[next_x] 
                 
-            pre_word=vout_idx.reshape(N)
-            
-        
-        
-        
+        if self.cell_type == 'lstm':
+            for i in range(max_length):
+                prev_h, c, _ = lstm_step_forward(x, prev_h, c, Wx, Wh, b)
+                x, _ = affine_forward(prev_h, W_vocab, b_vocab)
+                next_x = np.argsort(x, axis = 1)[:, -1]
+                captions[:, i] = next_x.copy()
+                x = W_embed[next_x] 
+
+        # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

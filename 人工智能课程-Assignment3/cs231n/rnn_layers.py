@@ -34,10 +34,13 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     # hidden state and any values you need for the backward pass in the next_h   #
     # and cache variables respectively.                                          #
     ##############################################################################
-    # 参考ppt第22页
-    temp = np.dot(x,Wx) + np.dot(prev_h, Wh) + b 
-    next_h = np.tanh(temp)
-    cache = (x, Wx, Wh, prev_h, next_h, b)
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+    h = x.dot(Wx) + prev_h.dot(Wh) + b
+    next_h = (np.exp(h) - np.exp(-h))/(np.exp(h) + np.exp(-h))
+    cache = (next_h, Wx, Wh, x, prev_h)
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -49,7 +52,7 @@ def rnn_step_backward(dnext_h, cache):
     Backward pass for a single timestep of a vanilla RNN.
 
     Inputs:
-    - dnext_h: Gradient of loss with respect to next hidden state
+    - dnext_h: Gradient of loss with respect to next hidden state, of shape (N, H)
     - cache: Cache object from the forward pass
 
     Returns a tuple of:
@@ -66,14 +69,17 @@ def rnn_step_backward(dnext_h, cache):
     # HINT: For the tanh function, you can compute the local derivative in terms #
     # of the output value from tanh.                                             #
     ##############################################################################
-    x, Wx, Wh, prev_h, next_h, b= cache 
-    dtanh = dnext_h * (1 - next_h * next_h) #tanh导数：f(z)' = 1 − (f(z))^2, （N, H)。特别注意这里容易写成三个dnext_h
-    dx = np.dot(dtanh, Wx.T)
-    dprev_h = np.dot(dtanh, Wh.T)
-    dWx = np.dot(x.T, dtanh)
-    dWh = np.dot(prev_h.T, dtanh)
-    db = np.sum(dtanh, axis=0)  # (H,)
-    
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+    next_h, Wx, Wh, x, prev_h = cache
+    dh = (1 - next_h**2)*dnext_h
+    dx = dh.dot(Wx.T)
+    dWx = x.T.dot(dh)
+    dprev_h = dh.dot(Wh.T)
+    dWh = prev_h.T.dot(dh)
+    db = np.sum(dh, axis = 0)
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -104,18 +110,20 @@ def rnn_forward(x, h0, Wx, Wh, b):
     # input data. You should use the rnn_step_forward function that you defined  #
     # above. You can use a for loop to help compute the forward pass.            #
     ##############################################################################
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
     N, T, D = x.shape
-    _, H = Wx.shape
+    H = b.shape[0]
     h = np.zeros((N, T, H))
-    prev_h = h0
-    
-    for t in range(T):
-        x_t = x[:, t, :]
-        next_h, forward_cache = rnn_step_forward(x_t, prev_h, Wx, Wh, b)
-        prev_h = next_h
-        h[:, t, :] = prev_h
-     
-    cache = (x, h0, Wh, Wx, b, h)
+    next_h, next_cache = rnn_step_forward(x[:, 0, :], h0, Wx, Wh, b)
+    h[:, 0, :] = next_h
+    cache = [next_cache]
+    for i in range(T-1):
+        next_h, next_cache = rnn_step_forward(x[:, i+1, :], next_h, Wx, Wh, b)
+        h[:, i+1, :] = next_h
+        cache.append(next_cache)
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -127,7 +135,12 @@ def rnn_backward(dh, cache):
     Compute the backward pass for a vanilla RNN over an entire sequence of data.
 
     Inputs:
-    - dh: Upstream gradients of all hidden states, of shape (N, T, H)
+    - dh: Upstream gradients of all hidden states, of shape (N, T, H). 
+    
+    NOTE: 'dh' contains the upstream gradients produced by the 
+    individual loss functions at each timestep, *not* the gradients
+    being passed between timesteps (which you'll have to compute yourself
+    by calling rnn_step_backward in a loop).
 
     Returns a tuple of:
     - dx: Gradient of inputs, of shape (N, T, D)
@@ -142,35 +155,25 @@ def rnn_backward(dh, cache):
     # sequence of data. You should use the rnn_step_backward function that you   #
     # defined above. You can use a for loop to help compute the backward pass.   #
     ##############################################################################
-    x, h0, Wh, Wx, b, h = cache
-    N, T, H = dh.shape
-    _, _, D = x.shape
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    next_h = h[:,T - 1,:]
-    
-    dprev_h = np.zeros((N, H))
-    dx = np.zeros((N, T, D))
-    dh0 = np.zeros((N, H))
-    dWx= np.zeros((D, H))
+    N, T, H = dh.shape
+    N, D = cache[0][3].shape
+    dprev_h = 0
+    dWx = np.zeros((D, H))
     dWh = np.zeros((H, H))
     db = np.zeros((H,))
-    
-    for t in range(T):
-        t = T - 1 - t
-        x_t = x[:, t, :]
-        
-        if t == 0:
-            prev_h = h0 # 第一个h0是输入的
-        else:
-            prev_h = h[:, t - 1, :]
-            
-        step_cache = (x_t, Wx, Wh, prev_h, next_h, b)
-        next_h = prev_h
-        dnext_h = dh[:, t, :] + dprev_h  # 从模型可知，在某一序列位置t的梯度损失由当前位置的输出对应的梯度损失和序列索引位置t+1时的梯度损失两部分共同决定。
-        dx[:, t, :], dprev_h, dWx_t, dWh_t, db_t = rnn_step_backward(dnext_h, step_cache)
-        dWx, dWh, db = dWx + dWx_t, dWh+dWh_t, db+db_t  # 相当于有多个upstream都回归到了dW，所以要将他们加起来
-
+    dx = np.zeros((N, T, D))
+    for i in range(T-1, -1, -1):
+        dnext_h = dprev_h + dh[:, i, :]
+        dxt, dprev_h, dWxt, dWht, dbt = rnn_step_backward(dnext_h, cache[i])
+        dx[:, i, :] = dxt
+        dWx += dWxt
+        dWh += dWht
+        db += dbt
     dh0 = dprev_h
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -181,7 +184,7 @@ def word_embedding_forward(x, W):
     """
     Forward pass for word embeddings. We operate on minibatches of size N where
     each sequence has length T. We assume a vocabulary of V words, assigning each
-    to a vector of dimension D.
+    word to a vector of dimension D.
 
     Inputs:
     - x: Integer array of shape (N, T) giving indices of words. Each element idx
@@ -198,16 +201,15 @@ def word_embedding_forward(x, W):
     #                                                                            #
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
-#     N, T = x.shape
-#     V, D = W.shape
-#     out = np.zeros((N, T, D))
-    
-#     for i in range(N):
-#         for j in range(T):
-#             out[i, j] = W[x[i,j]]
-    out = W[x[:,]]
-            
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+    N, T = x.shape
+    V, D = W.shape
+    out = np.zeros((N, T, D))
+    out[:, :] = W[x]
     cache = (x, W)
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -233,12 +235,19 @@ def word_embedding_backward(dout, cache):
     ##############################################################################
     # TODO: Implement the backward pass for word embeddings.                     #
     #                                                                            #
-    # Note that Words can appear more than once in a sequence.                   #
+    # Note that words can appear more than once in a sequence.                   #
     # HINT: Look up the function np.add.at                                       #
     ##############################################################################
-    x,W = cache
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+    x, W = cache
+    N, T = x.shape
     dW = np.zeros(W.shape)
-    np.add.at(dW, x, dout)
+    for n in range(N):
+        for t in range(T):
+            np.add.at(dW, x[n, t], dout[n, t])
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -266,6 +275,8 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     The input data has dimension D, the hidden state has dimension H, and we use
     a minibatch size of N.
 
+    Note that a sigmoid() function has already been provided for you in this file.
+
     Inputs:
     - x: Input data, of shape (N, D)
     - prev_h: Previous hidden state, of shape (N, H)
@@ -284,20 +295,23 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     # TODO: Implement the forward pass for a single timestep of an LSTM.        #
     # You may want to use the numerically stable sigmoid implementation above.  #
     #############################################################################
-    H = Wh.shape[0]
-    
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+    N, H = prev_h.shape
     a = x.dot(Wx) + prev_h.dot(Wh) + b
     
-    gate_i = sigmoid(a[:, :H])
+    tanh = lambda x: sigmoid(2*x)-sigmoid(-2*x)
+    
+    gate_i = sigmoid(a[:, 0:H])
     gate_f = sigmoid(a[:, H:2*H])
     gate_o = sigmoid(a[:, 2*H:3*H])
-    gate_g = np.tanh(a[:, 3*H:])
+    gate_g = tanh(a[:, 3*H:])
     
-    next_c = gate_f * prev_c + gate_i * gate_g
-    temp_t = np.tanh(next_c)
-    next_h = gate_o * temp_t
-    
-    cache = (gate_i, gate_f, gate_o, gate_g, prev_c, prev_h, Wx, Wh, x, temp_t)
+    next_c = prev_c*gate_f + gate_i*gate_g
+    next_h = tanh(next_c)*gate_o
+    cache = (x, prev_h, prev_c, Wx, Wh, b, gate_i, gate_f, gate_o, gate_g, next_c, next_h)
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -322,36 +336,40 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     - dWh: Gradient of hidden-to-hidden weights, of shape (H, 4H)
     - db: Gradient of biases, of shape (4H,)
     """
-    dx, dh, dc, dWx, dWh, db = None, None, None, None, None, None
+    dx, dprev_h, dprev_c, dWx, dWh, db = None, None, None, None, None, None
     #############################################################################
     # TODO: Implement the backward pass for a single timestep of an LSTM.       #
     #                                                                           #
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    # 参考ppt 98
-    N, H = dnext_h.shape
-    gate_i, gate_f, gate_o, gate_g, prev_c, prev_h, Wx, Wh, x, temp_t = cache
-    
-    dgate_o = dnext_h * temp_t
-    dc_t = gate_o * (1 - temp_t * temp_t) * dnext_h + dnext_c   # ct的来源有两个
-    dgate_f = prev_c * dc_t
-    dgate_i = gate_g * dc_t
-    dprev_c = gate_f * dc_t
-    dgate_g = gate_i * dc_t
-    
-    da_i = (1 - gate_i) * gate_i * dgate_i
-    da_f = (1 - gate_f) * gate_f * dgate_f
-    da_o = (1 - gate_o) * gate_o * dgate_o
-    da_g = (1 - gate_g * gate_g) * dgate_g
-    da = np.hstack((da_i, da_f, da_o, da_g))
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    dWx = x.T.dot(da)
-    dWh = prev_h.T.dot(da)
-    db = np.sum(da, axis=0)
+    x, prev_h, prev_c, Wx, Wh, b, gate_i, gate_f, gate_o, gate_g, next_c, next_h = cache
+    tanh = lambda x: sigmoid(2*x)-sigmoid(-2*x)
+     
+    dgate_o = dnext_h*tanh(next_c)
+    dtanhnext_c = dnext_h*gate_o
+    dnext_c += dtanhnext_c*(1-tanh(next_c)**2)
+     
+    dgate_f = dnext_c*prev_c
+    dprev_c = dnext_c*gate_f
+    dgate_i = dnext_c*gate_g
+    dgate_g = dnext_c*gate_i
+     
+    da1 = dgate_i*gate_i*(1-gate_i)
+    da2 = dgate_f*gate_f*(1-gate_f)
+    da3 = dgate_o*gate_o*(1-gate_o)
+    da4 = dgate_g*(1-gate_g**2)
+     
+    da = np.hstack([da1, da2, da3, da4])
     dx = da.dot(Wx.T)
+    dWx = x.T.dot(da)
     dprev_h = da.dot(Wh.T)
-    
+    dWh = prev_h.T.dot(da)
+    db = np.sum(da, axis = 0)
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -386,20 +404,20 @@ def lstm_forward(x, h0, Wx, Wh, b):
     # TODO: Implement the forward pass for an LSTM over an entire timeseries.   #
     # You should use the lstm_step_forward function that you just defined.      #
     #############################################################################
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
     N, T, D = x.shape
-    H = Wh.shape[0]
+    N, H = h0.shape
     h = np.zeros((N, T, H))
-    cache = {}
-    prev_h = h0
-    prev_c = np.zeros((N, H))
-    
-    for t in range(T):
-        x_t = x[:, t, :]
-        next_h, next_c, cache[t] = lstm_step_forward(x_t, prev_h, prev_c, Wx, Wh, b)
-        prev_h = next_h
-        prev_c = next_c
-        h[:, t, :] = prev_h
-    
+    ht = h0
+    ct = 0
+    cache = []
+    for i in range(T):
+        ht, ct, next_cache = lstm_step_forward(x[:, i, :], ht, ct, Wx, Wh, b)
+        h[:, i, :] = ht
+        cache.append(next_cache)
+        
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -427,28 +445,27 @@ def lstm_backward(dh, cache):
     # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
     # You should use the lstm_step_backward function that you just defined.     #
     #############################################################################
-    N, T, H = dh.shape
-    gate_i, gate_f, gate_o, gate_g, prev_c, prev_h, Wx, Wh, x, temp_t = cache[T - 1]
-    print(x)
-    D = x.shape[1]
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    dprev_h = np.zeros((N, H))
-    dprev_c = np.zeros((N, H))
+    N, T, H = dh.shape
+    D = cache[0][0].shape[1]
     dx = np.zeros((N, T, D))
-    dh0 = np.zeros((N, H))
-    dWx= np.zeros((D, 4*H))
+    dWx = np.zeros((D, 4*H))
     dWh = np.zeros((H, 4*H))
     db = np.zeros((4*H,))
+    dht = 0
+    dct = 0
     
-    for t in range(T):
-        t = T - 1 - t
-        step_cache = cache[t]
-        dnext_h = dh[:,t, :] + dprev_h  # 从模型可知，在某一序列位置t的梯度损失由当前位置的输出对应的梯度损失和序列索引位置t+1时的梯度损失两部分共同决定。
-        dnext_c = dprev_c
-        dx[:, t, :], dprev_h, dprev_c, dWx_t, dWh_t, db_t = lstm_step_backward(dnext_h, dnext_c, step_cache)
-        dWx, dWh, db = dWx + dWx_t, dWh+dWh_t, db+db_t  # 相当于有多个upstream都回归到了dW，所以要将他们加起来
+    for i in range(T-1, -1, -1):
+        dht += dh[:, i, :]
+        dxt, dht, dct, dWxt, dWht, dbt = lstm_step_backward(dht, dct, cache[i])
+        dx[:, i, :] = dxt
+        dWx += dWxt
+        dWh += dWht
+        db += dbt
+    dh0 = dht
 
-    dh0 = dprev_h
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -538,9 +555,9 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
 
     probs = np.exp(x_flat - np.max(x_flat, axis=1, keepdims=True))
     probs /= np.sum(probs, axis=1, keepdims=True)
-    loss = -np.sum(mask_flat * np.log(probs[np.arange(N * T), y_flat])) / N  # 通过直接与mask_flat相乘去掉对loss无贡献的NULL
-    dx_flat = probs.copy()  
-    dx_flat[np.arange(N * T), y_flat] -= 1  # 求导
+    loss = -np.sum(mask_flat * np.log(probs[np.arange(N * T), y_flat])) / N
+    dx_flat = probs.copy()
+    dx_flat[np.arange(N * T), y_flat] -= 1
     dx_flat /= N
     dx_flat *= mask_flat[:, None]
 
